@@ -3,8 +3,8 @@
 
 CCFLAGS = -g -Wall -pthread
 
-test_messages: test_messages.c pmessages.h pmessages.o list.o
-	gcc $(CCFLAGS) -o test_messages test_messages.c pmessages.o list.o
+main: main.c pmessages.h pmessages.o list.o
+	gcc $(CCFLAGS) -o main main.c pmessages.o list.o
 
 list.o: list.c list.h
 	gcc $(CCFLAGS) -c list.c
@@ -15,5 +15,5 @@ clean:
 	-rm list.o pmessages.o
 
 spotless: clean
-	-rm test_messages
+	-rm main
 
