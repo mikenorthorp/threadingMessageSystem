@@ -1,7 +1,7 @@
 
 #Thisnext linedefines arguments that are passed to all compilation steps
 
-CCFLAGS = -g -Wall -lpthread
+CCFLAGS = -g -Wall -pthread
 
 test_messages: test_messages.c pmessages.h pmessages.o list.o
 	gcc $(CCFLAGS) -o test_messages test_messages.c pmessages.o list.o
