@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define CHAR_MAX (50)
+#define CHAR_MAX (100)
 #define BUF_MAX (80)
 #define TICKET_SECRET_MAX (10)
 #define SECRET_MAX (21)
@@ -16,11 +16,13 @@
 
 
 //Global threads
+//Create client thread
+pthread_t clientThreadRef;
+
 // Create auth thread
 pthread_t authThreadRef;
 
-//Create client thread
-pthread_t clientThreadRef;
+
 
 //Define structs for different stuff
 
@@ -62,6 +64,7 @@ List_t *readInUsersFromFile(char *filename)
     char parsed[80];
     List_t *userPassList;
     userPassFile *userPassNode;
+    FILE *file;
 
     // Malloc list
     userPassList = (List_t *) malloc( sizeof( List_t ) );
@@ -71,12 +74,12 @@ List_t *readInUsersFromFile(char *filename)
 
         // Open filename given
         // TODO: Error checking for filename read in
-        stdin = fopen (filename, "r");
+        file = fopen (filename, "r");
 
-        if (stdin != NULL)
+        if (file != NULL)
         {
 
-            while (fgets(line, 80, stdin) != NULL)
+            while (fgets(line, 80, file) != NULL)
             {
                 //Read in a line
                 sscanf (line, "%s", parsed);
@@ -93,17 +96,13 @@ List_t *readInUsersFromFile(char *filename)
                     {
                         printf ("Error in inserting the process into the list.\n");
                     }
-                    else
-                    {
-                        printf("Added %sto the list\n", parsed);
-                    }
                 }
                 else
                 {
                     printf("Unable to allocate memory for struct\n");
                 }
             }
-            fclose(stdin);  /* close the file prior to exiting the routine */
+            fclose(file);  /* close the file prior to exiting the routine */
         }
         else
         {
@@ -132,14 +131,62 @@ void cleanUp()
 void *clientThread()
 {
 
+    printf("Thread client start\n");
+    char   inputbuffer[BUF_MAX];
+    char   username[CHAR_MAX];
+    char   password[CHAR_MAX];
+    char   messageToSend[CHAR_MAX];
     pthread_t receive;
     char *messageReceived;
     int size;
 
-    printf("Client thread ready to send\n");
+    //Read in user input
+    if (fgets( inputbuffer, BUF_MAX - 1, stdin ))
+    {
+        /* Put the parameters into a PCB and store it in the list of processes. */
+        if (sscanf( inputbuffer, "%s", username) == 1)
+        {
+            //Read in username
+        }
+        else
+        {
+            printf ("Incorrect number of parameters read.\n");
+        }
+    }
+    // Nothing to read in
+    else
+    {
+        printf ("Nothing read in.\n");
+    }
+
+    //Read in user input
+    if (fgets( inputbuffer, BUF_MAX - 1, stdin ))
+    {
+        /* Put the parameters into a PCB and store it in the list of processes. */
+        if (sscanf( inputbuffer, "%s", password) == 1)
+        {
+            //Read in password
+        }
+        else
+        {
+            printf ("Incorrect number of parameters read.\n");
+        }
+    }
+    // Nothing to read in
+    else
+    {
+        printf ("Nothing read in.\n");
+    }
+
+
+    printf("Finished reading in input");
+    // Create message of user:pass to send to user
+    strcpy (messageToSend, username);
+    strcat (messageToSend, ":");
+    strcat (messageToSend, password);
 
     // Send message to auth thread
-    if (send_message_to_thread( authThreadRef, "mike:bobby", strlen("mike:bobby") + 1) != MSG_OK)
+    if (send_message_to_thread( authThreadRef, messageToSend, strlen(messageToSend) + 1) != MSG_OK)
     {
         printf( "first failed\n" );
     }
@@ -156,6 +203,8 @@ void *clientThread()
     {
         printf ("first receive failed\n");
     }
+
+    return NULL;
 }
 
 // Main authThread logic
@@ -175,7 +224,7 @@ void *authThread(void *auth)
     isAuthed = 0;
 
 
-    printf("Auth thread ready to receive...");
+    printf("Auth thread ready to receive...\n");
     if (receive_message( &receive, &messageReceived, &size) == MSG_OK)
     {
         printf ("Auth received message 1--%s--size %d\n", messageReceived, size );
@@ -200,7 +249,7 @@ void *authThread(void *auth)
             if (isAuthed == 1)
             {
                 // Send message to auth thread
-                if (send_message_to_thread( clientThreadRef, "Passed", strlen("Passed" + 1) != MSG_OK))
+                if (send_message_to_thread( clientThreadRef, "Passed", strlen("Passed") + 1) != MSG_OK)
                 {
                     printf( "Auth 1 first failed\n" );
                 }
@@ -209,7 +258,7 @@ void *authThread(void *auth)
             else
             {
                 // Send message to auth thread
-                if (send_message_to_thread( clientThreadRef, "Failed", strlen("Failed" + 1) != MSG_OK))
+                if (send_message_to_thread( clientThreadRef, "Failed", strlen("Failed") + 1) != MSG_OK)
                 {
                     printf( "Auth 0 first failed\n" );
                 }
@@ -250,12 +299,7 @@ int main( int argc, char *argv[] )
     char superSecretTicketGrantingThread[TICKET_SECRET_MAX] = "apple";
 
     // Read in from command line for authFile name and serviceFile name
-    if (argc == 3)
-    {
-        printf("AuthFile name is %s and ServiceFile name is %s\n\n", argv[1] , argv[2]);
-    }
-    // No paramters read in
-    else
+    if (argc != 3)
     {
         printf ("Incorrect number of parameters read in, exiting\n");
         return 1;
