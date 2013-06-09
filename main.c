@@ -304,14 +304,17 @@ void *authThread(void *auth)
     return NULL;
 }
 
-// Main Service thread logic
+/* This thread is not implemented but would include support for add, sub and mult services, which would wait
+   for tickets from the client thread, check if the ticket is valid, perform the requested operation, then send a message
+   back to the client thread. */
 void *serviceThread()
 {
 
     return NULL;
 }
 
-// Main ticket granting thread logic
+/* This thread is not implemented but would wait for a message from the client thread with an authentication string, service
+   and a username. It would then verify that the authentication string is correct and return a valid ticket string to the user. */
 void *ticketGrantingThread()
 {
 
