@@ -34,43 +34,25 @@ Installation
 2. run `make` command in terminal
 3. run `./main authFile.txt serviceFile.txt`
 *You can give the program different file arguments than above, but check below
-for the format of each file*
+in the configuration section for the format of each file*
 
 Making the Program Do Things
 ----------------------------
 
-1. Type in a proccess in the form of
-   `processname total_duration running_state_duration`
-   ex. 'firefox 20 3'
-
-   This would make a proccess called firefox run for 3 units of time whenever it
-   is in the running queue, and exit once it has ran for 20 units of time total.
-
-2. Send intterupts to the program using kill -intteruptname proccessID
-   Where proccessID is the number of the `simulate` proccess and the intterupt
-   name is one below.
-
-   SIGUSR1 - print the state of the system (list the contents of the ready,
-   running, and blocked, queue)
-
-   SIGUSR2 - the running process has requested a blocking operation (goes to
-   blocked queue for 5 units of time)
-
-   SIGHUP - re-read the config file and update the program's behaviour
-   based on the new config file contents
-
-3. CTRL-C sends a SIGINT to the program which frees the memory and exits the
-   program.
-
-4. Modifying the config file determins how often the SIGALRM runs.
-
-
+1. You will be prompted for a username(mike) and password(bobby) or enter any user:pass found in the authFile.txt.
+2. This will send a message to the authentication thread which will verify the user and password was correct
+3. You will receive an authentication string back to the client thread that includes the secret ticket value (apple)
+4. If you enter incorrect credentials, you will receive a string in the form 0:username:password:0
+5. The program will then exit
 
 Configuration
 -------------
 
-Edit the config.txt file and change the timer=x, where x is the seconds for a
-unit of time, to however long you want a unit of time to be for your processes.
+Edit the authFile.txt or make your own, then put usernames and passwords on each
+line in the form `username:password`
+
+Edit the serviceFile.txt or make your own, then put service names(add, sub, mult),
+secret values, and a list of users that can use that service in the form `service:secret:user1,user2,user3...userN`
 
 
 Method Descriptions
@@ -81,101 +63,60 @@ Method Descriptions
 Linked list structure with methods for adding, removing, and getting
 nodes from a list.
 
-#### parse.c and parse.h - Main File ####
+#### pmessages.c, pmessages.h and pmessages_private.h - Mailbox system ####
 
-This does all of the logic, intterupt handling and gets user input for the
-program.
+This is a mailbox system to send messages between threads safely.
 
-#### State functions ####
+#### main.c and main.h - Main File ####
 
-void readyState();
+This handles the different threads, creates them, and handles the authentication
+and message sending for the program.
 
-	- Handles logic for moving from the ready state to other states.
+#### File Read Functions ####
 
-void runningState();
+List_t *readInServiceFile(char *filename);
 
-	- Handles logic for moving from the running state to other states.
+	- Reads in a service file of the format `service:secret:user1,user2,user3...userN` on each line
+	It splits each part into a struct, then stores this in a list for each line, then returns the list.
 
-void blockedState();
+List_t *readInUsersFromFile(char *filename);
 
-	- Handles logic for moving from the blocked state to other states.
-
-void stateTransitions(int the_signal);
-
-	- Handles logic for what to run every time a SIGALRM inttterupt happens.
+	- Reads in a authentication file of the format `username:password` on each line
+	It stores each line in a struct, then stores this in a list for each line, then returns the list.
 
 
-#### Intterupt Handlers and Functions ####
+#### Thread Functions ####
 
-void moveToBlockedState(int signal);
+void *authThread(void *auth);
 
-	- Moves a proccess from running queue to blocked queue if called by
-	  SIGUSR2 intterupt
+	- The auth thread waits for a user name and pass to get sent to it from the client thread
+	which it will then authenticate. It will return a valid authentication string or invalid
+    if the user is authenticated or not. It authenticates based on the list of usernames:passwords from
+    the authentication file read in at the start. It returns NULL. This thread receives and sends messages to the
+    client thread.
 
-void cleanupAndExit(int signal);
+void *clientThread();
 
-	- Frees all memory and exits the program when called by `CTRL+C` or
-	  SIGINT
+	- The client thread reads in a username and password and then tries to authenticate with the
+    authentication thread. If it receives a proper message back it should allow the user to
+    run a service name with two arguments (which is not implemented). It returns NULL. This thread sends and receives
+    messages from the authentication thread.
 
-int setUpStateLister();
+void *ticketGrantingThread();
 
-	- Sets up the SIGUSR1 intterupt handler for listing all of the queues
+	- This thread is not implemented but would wait for a message from the client thread with an authentication string, service
+	and a username. It would then verify that the authentication string is correct and return a valid ticket string to the user.
 
-int setUpBlocker();
+void *serviceThread();
 
-	- Sets up the SIGUSR2 intterupt handler for blocking running proccesses
-
-int setUpConfigUpdater();
-
-	- Sets up the SIGHUP intterupt handler for updating the timer while the
-	  program is running.
-
-int setUpExit();
-
-	- Sets up the SIGINT intterupt handler for exiting and freeing memory
-	  in the program.
-
-#### Queue display ####
-
-void printQueue(List_t *list, char *name);
-
-	- This prints out a queue and all of its nodes in the format
-	  `proccessname total_duration_left_to_run`
-
-void displayQueueInfo(int signal);
-
-	- This displays all of the queues and their contents when called by
-	  the SIGUSR1 intterupt
-
-void updateQueueTime(List_t *list);
-
-	- This updates the current time every proccess has been in it's current
-	  queue by 1 time unit.
-
-#### Config functions ####
-
-int readConfigTimer();
-
-	- This reads the config.txt file and grabs the number from timer=x, where
-	  x is the seconds for a unit of time. It also sets the timer variable to
-	  the number it reads.
-
-int setUpAlarm(int timer);
-
-	- This sets up the SIGALRM intterupt handler to run the proccess managment
-	  logic.
-
-void updateConfigTimer(int signal);
-
-	- This updates the timer from the config.txt when called by SIGHUP
-
+	- This thread is not implemented but would include support for add, sub and mult services, which would wait
+	for tickets from the client thread, check if the ticket is valid, perform the requested operation, then send a message
+	back to the client thread.
 
 Citations
 =========
 
-Travis Roberts (classmate) helped explain how the linked list functions
-worked with the void pointers, and how you can pop off the head and add
-to another queue without segmentation faults or errors.
+The mailbox system was developed from the professor Mike McAllister.
 
 
 
