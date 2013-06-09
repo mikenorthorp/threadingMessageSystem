@@ -18,17 +18,14 @@ char superSecretTicketGrantingThread[TICKET_SECRET_MAX] = "apple";
 // Auth struct
 typedef struct
 {
-    int isAuth;
-    char username[CHAR_MAX];
-    char password[CHAR_MAX];
+    char fileName[CHAR_MAX];
     char secretValue[TICKET_SECRET_MAX];
 } authStruct;
 
 // Struct to store lines from username password file
 typedef struct
 {
-    char username[CHAR_MAX];
-    char password[CHAR_MAX];
+    char usernamePassword[CHAR_MAX];
 } userPassFile;
 
 // Struct to store lines from service file
@@ -39,37 +36,109 @@ typedef struct
     char userList[USER_LIST_MAX];
 } serviceFile;
 
+// A struct containing all lists
+typedef struct
+{
+    List_t userPassFile;
+} allLists;
+
 
 // Functions for creating each thread
-void cleanUp() {
-  // Deallocate stuff
+void cleanUp()
+{
+    // Deallocate stuff
 
 }
 // Client Thread
-void createClientThread() {
+void createClientThread()
+{
+
+}
+
+// Main client thread logic
+void clientThread() {
 
 }
 
 // Authentication Thread
-void createAuthenticationThread() {
+void createAuthenticationThread()
+{
+
+}
+
+// Main authThread logic
+void authThread() {
 
 }
 
 // Ticket granting thread
-void createTicketGrantingThread() {
+void createTicketGrantingThread()
+{
 
 }
 
 // Service Thread (can create multiple)
-void createServiceThread(){
+void createServiceThread()
+{
 
 }
 
-void readInUsers() {
+// Return a list with all the users in it
+void readInUsersFromFile(char *filename)
+{
+    char line[80];
+    char parsed[80];
+    List_t userPassList;
+    userPassFile *userPassNode;
 
+    if (List_init( &userPassList ))
+    {
+
+        // Open filename given
+        // TODO: Error checking for filename read in
+        stdin = fopen (filename, "r");
+
+        while (fgets(line, 80, stdin) != NULL)
+        {
+            //Read in a line
+            sscanf (line, "%s", parsed);
+
+            // Add it to the userpass struct
+            userPassNode = (userPassFile *) malloc( sizeof( userPassFile ) );
+            if (userPassNode != NULL)
+            {
+                strncpy( userPassNode->usernamePassword, parsed, CHAR_MAX - 1 );
+                userPassNode->usernamePassword[CHAR_MAX] = '\0'; /* Make sure that it is null-terminated. */
+
+                // Add userpass struct to a list
+                if (List_add_tail( &userPassList, (void *)userPassNode ) == 0)
+                {
+                    printf ("Error in inserting the process into the list.\n");
+                }
+                else
+                {
+                    printf("Added %sto the list\n", parsed);
+                }
+            }
+            else
+            {
+                printf("Unable to allocate memory for struct");
+            }
+        }
+        fclose(stdin);  /* close the file prior to exiting the routine */
+    }
+    else
+    {
+        printf("Could not initialize list");
+    }
+
+    //End file reading
+
+    //Return a linked list with all values
 }
 
-void readInServices() {
+void readInServices()
+{
 
 }
 
@@ -77,11 +146,12 @@ void readInServices() {
 int
 main( int argc, char **argv )
 {
-  // Call client thread to start waiting for user input
-  createClientThread();
+    readInUsersFromFile("authFile.txt");
+    // Call client thread to start waiting for user input
+    createClientThread();
 
 
-  // End program
-  return 1;
+    // End program
+    return 1;
 }
 
