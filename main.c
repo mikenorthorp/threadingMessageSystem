@@ -22,11 +22,11 @@ pthread_t clientThreadRef;
 // Create auth thread
 pthread_t authThreadRef;
 
+// Declare variables
+char superSecretTicketGrantingThread[TICKET_SECRET_MAX] = "apple";
 
 
 //Define structs for different stuff
-
-
 // Auth struct
 typedef struct
 {
@@ -40,22 +40,28 @@ typedef struct
     char usernamePassword[CHAR_MAX];
 } userPassFile;
 
-// Struct to store lines from service file
+// Struct to store lines from service file and ticket secret value
 typedef struct
 {
+    char secretValue[TICKET_SECRET_MAX];
     char service[SERVICE_NAME_MAX];
     char secret[SECRET_MAX];
-    char userList[USER_LIST_MAX];
+    List_t userList;
 } serviceFile;
 
-// A struct containing all lists
-typedef struct
+
+// Return a list with all of the ticket granting threads information in it
+List_t *readInServiceFile(char *filename)
 {
-    List_t userPassFile;
-} allLists;
+    // Read in file from argument supplied
 
+    // Loop through each line
+      // Store Ticket Secret Value, Service name, secret, and a Linked list of the comma seperated users into a struct
+      // Add each struct to a linked list so you have a list of services, their secret, and their users
 
-
+    //Return the linked list
+    return NULL;
+}
 
 // Return a list with all the users in it
 List_t *readInUsersFromFile(char *filename)
@@ -71,9 +77,7 @@ List_t *readInUsersFromFile(char *filename)
 
     if (List_init( userPassList ))
     {
-
         // Open filename given
-        // TODO: Error checking for filename read in
         file = fopen (filename, "r");
 
         if (file != NULL)
@@ -120,18 +124,15 @@ List_t *readInUsersFromFile(char *filename)
     return userPassList;
 }
 
-// Functions for creating each thread
+// Clean up all memory
 void cleanUp()
 {
-    // Deallocate stuff
-
+    // Deallocate structs and other malloc'd things
 }
 
 // Main client thread logic
 void *clientThread()
 {
-
-    printf("Thread client start\n");
     char   inputbuffer[BUF_MAX];
     char   username[CHAR_MAX];
     char   password[CHAR_MAX];
@@ -141,12 +142,12 @@ void *clientThread()
     int size;
 
     //Read in user input
+    printf("Enter a username: ");
     if (fgets( inputbuffer, BUF_MAX - 1, stdin ))
     {
         /* Put the parameters into a PCB and store it in the list of processes. */
         if (sscanf( inputbuffer, "%s", username) == 1)
         {
-            //Read in username
         }
         else
         {
@@ -160,6 +161,7 @@ void *clientThread()
     }
 
     //Read in user input
+    printf("Enter your password: ");
     if (fgets( inputbuffer, BUF_MAX - 1, stdin ))
     {
         /* Put the parameters into a PCB and store it in the list of processes. */
@@ -178,8 +180,6 @@ void *clientThread()
         printf ("Nothing read in.\n");
     }
 
-
-    printf("Finished reading in input");
     // Create message of user:pass to send to user
     strcpy (messageToSend, username);
     strcat (messageToSend, ":");
@@ -193,7 +193,6 @@ void *clientThread()
 
     // Wait for username and pass auth string
 
-    printf("Client thread waiting...");
     // Receive response
     if (receive_message( &receive, &messageReceived, &size) == MSG_OK)
     {
@@ -214,6 +213,8 @@ void *authThread(void *auth)
     userPassFile *lastNode = NULL;
     userPassFile *userPassNode = NULL;
     userPassList = readInUsersFromFile(((authStruct *)auth)->fileName);
+    char messageToSend[CHAR_MAX];
+    char username[CHAR_MAX];
 
     // Wait for username pass to authenticate from another thread
     pthread_t receive;
@@ -223,8 +224,6 @@ void *authThread(void *auth)
 
     isAuthed = 0;
 
-
-    printf("Auth thread ready to receive...\n");
     if (receive_message( &receive, &messageReceived, &size) == MSG_OK)
     {
         printf ("Auth received message 1--%s--size %d\n", messageReceived, size );
@@ -248,8 +247,13 @@ void *authThread(void *auth)
             // Send message back to client thread that auth passed with authentication string
             if (isAuthed == 1)
             {
+                strcpy (messageToSend, "1:");
+                strcat (messageToSend, messageReceived);
+                strcat (messageToSend, ":");
+                strcat (messageToSend, ((authStruct *)auth)->secretValue);
+
                 // Send message to auth thread
-                if (send_message_to_thread( clientThreadRef, "Passed", strlen("Passed") + 1) != MSG_OK)
+                if (send_message_to_thread( clientThreadRef, messageToSend, strlen(messageToSend) + 1) != MSG_OK)
                 {
                     printf( "Auth 1 first failed\n" );
                 }
@@ -257,8 +261,16 @@ void *authThread(void *auth)
             // Send message back to client thread that it failed auth
             else
             {
+                //Get username with regex
+                sscanf( messageReceived, "%[^:]", username);
+
+                //Create message to send on failure
+                strcpy (messageToSend, "0:");
+                strcat (messageToSend, username);
+                strcat (messageToSend, ":0");
+
                 // Send message to auth thread
-                if (send_message_to_thread( clientThreadRef, "Failed", strlen("Failed") + 1) != MSG_OK)
+                if (send_message_to_thread( clientThreadRef, messageToSend, strlen(messageToSend) + 1) != MSG_OK)
                 {
                     printf( "Auth 0 first failed\n" );
                 }
@@ -274,30 +286,9 @@ void *authThread(void *auth)
 }
 
 
-// Ticket granting thread
-void createTicketGrantingThread()
-{
-
-}
-
-// Service Thread (can create multiple)
-void createServiceThread()
-{
-
-}
-
-void readInServices()
-{
-
-}
-
 
 int main( int argc, char *argv[] )
 {
-
-    // Declare variables
-    char superSecretTicketGrantingThread[TICKET_SECRET_MAX] = "apple";
-
     // Read in from command line for authFile name and serviceFile name
     if (argc != 3)
     {
