@@ -395,7 +395,8 @@ List_t *readInServiceFile(char *filename)
         }
         else
         {
-            printf("Could not open file %s\n", filename);
+            printf("Could not open file, exiting... %s\n", filename);
+            exit(0);
         }
     }
     else
@@ -462,7 +463,8 @@ List_t *readInUsersFromFile(char *filename)
         }
         else
         {
-            printf("Could not open file %s\n", filename);
+            printf("Could not open file, exiting... %s\n", filename);
+            exit(0);
         }
     }
     else
