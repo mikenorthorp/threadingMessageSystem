@@ -1,0 +1,42 @@
+------------------------------
+Test Cases Passed
+------------------------------
+All below
+
+-------------------------------
+File Related
+-------------------------------
+
+1. Error checking when opening files
+2. Files close properly in code
+3. Program exits when files are not read properly
+
+
+-------------------------------
+Input Related
+-------------------------------
+
+1. Username reads in correctly in client thread function
+2. Password reads in correctly in client thread function
+
+
+-------------------------------
+Thread Related
+-------------------------------
+1. Threads all create on program start up
+2. Threads wait until each one is finished before ending the program
+3. Client and Auth thread communicate with each other properly through the
+mailbox system.
+4. Client sends a message then goes to a waiting for message state properly.
+5. Auth starts in a waiting for message state and then sends a message to the client
+thread properly.
+
+
+-------------------------------
+Other
+-------------------------------
+
+1. Make file builds properly
+2. Program compiles on bluenose properly
+3. Program reads in authentication file correctly and stores in a list
+4. Program reads in service file correctly and stores in a list
