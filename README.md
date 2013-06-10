@@ -113,6 +113,12 @@ void *serviceThread();
 	for tickets from the client thread, check if the ticket is valid, perform the requested operation, then send a message
 	back to the client thread.
 
+
+Test Cases
+------------------
+
+See testCases.txt for test cases done
+
 Citations
 =========
 
